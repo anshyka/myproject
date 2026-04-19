@@ -17,10 +17,19 @@ def run_benchmarking(df: pd.DataFrame):
     )
     return experiment
 
+
 def compare_models_clinical():
-    print("Benchmarking models... (This may take a moment)")
+    """
+    Benchmarks all available baseline models in PyCaret.
+    Sorts the leaderboard prioritizing F1-score for balanced clinical metrics.
+    """
+    print("Benchmarking available models... (This will take a bit longer)")
+
+    # We exclude 'lightgbm' because it is structurally incompatible
+    # with tiny datasets and spams the terminal with split warnings.
     best_model = compare_models(
-        include=['rf', 'gbc', 'svm', 'lr'],
-        sort='F1'  # Changed from 'Recall'
+        sort='F1',
+        exclude=['lightgbm']  # <--- THIS IS THE FIX
     )
+
     return best_model
