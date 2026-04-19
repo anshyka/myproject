@@ -1,16 +1,72 @@
-# This is a sample Python script.
+import os
+import logging
+import joblib
+from src.preprocessing import ParkinsonsDataLoader
+from src.benchmarking import run_benchmarking, compare_models_clinical
+from src.tuner import fine_tune_recall
+from src.evaluation import evaluate_and_plot
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Configure logging for production-grade output
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def run_pipeline(data_path: str) -> None:
+    """
+    Executes the end-to-end Parkinson's detection machine learning pipeline.
+    Includes data ingestion, schema validation, AutoML benchmarking, 
+    hyperparameter tuning, evaluation, and artifact serialization.
+    """
+    logger.info("Initializing Parkinson's Disease ML pipeline execution.")
+
+    try:
+        # 1. Load and Validate Data
+        logger.info(f"Loading dataset from: {data_path}")
+        loader = ParkinsonsDataLoader()
+        df = loader.load_data(data_path)
+        loader.validate_schema(df)
+        logger.info(f"Data ingested and schema validated successfully. Shape: {df.shape}")
+
+        # 2. Benchmarking
+        logger.info("Starting AutoML benchmarking with strict GroupKFold constraints.")
+        run_benchmarking(df)
+
+        # 3. Find Best Baseline
+        best_baseline = compare_models_clinical()
+        logger.info(f"Baseline model selection complete. Champion model: {type(best_baseline).__name__}")
+
+        # 4. Fine-Tune for Clinical Recall
+        logger.info("Initiating Optuna hyperparameter tuning optimizing for Recall.")
+        tuned_model = fine_tune_recall(best_baseline)
+        logger.info("Hyperparameter tuning completed successfully.")
+
+        # 5. Evaluate and Generate Interpretability Plots
+        logger.info("Evaluating tuned model on the holdout set.")
+        evaluate_and_plot(tuned_model)
+
+        # 6. Artifact Export
+        os.makedirs('artifacts/models', exist_ok=True)
+        export_path = 'artifacts/models/parkinsons_model_v1.joblib'
+
+        feature_names = df.drop(columns=['status', 'name']).columns.tolist()
+
+        artifact = {
+            'model_pipeline': tuned_model,
+            'feature_names': feature_names
+        }
+
+        joblib.dump(artifact, export_path)
+        logger.info(f"Pipeline execution complete. Artifact serialized to: {export_path}")
+
+    except Exception as e:
+        logger.error(f"Pipeline execution failed due to an error: {str(e)}", exc_info=True)
+        raise
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+if __name__ == "__main__":
+    # Target dataset path
+    run_pipeline('data/raw/parkinsons_classification_data.csv')

@@ -27,7 +27,7 @@ def compare_models_clinical():
     # svm = Support Vector Machine, lr = Logistic Regression
     print("Benchmarking models... (This may take a moment)")
     best_model = compare_models(
-        include=['rf', 'xgboost', 'svm', 'lr'],
+        include=['rf', 'gbc', 'svm', 'lr'],
         sort='Recall'
     )
     return best_model
