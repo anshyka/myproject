@@ -27,7 +27,7 @@ def evaluate_and_plot(model):
 
         # Move it to our artifacts folder
         if os.path.exists('Feature Importance.png'):
-            os.rename('Feature Importance.png', 'artifacts/plots/feature_importance.png')
+            os.replace('Feature Importance.png', 'artifacts/plots/feature_importance.png')
             print("Plot saved to artifacts/plots/feature_importance.png")
     except Exception as e:
         print(f"Could not generate feature importance plot for this model type: {e}")
