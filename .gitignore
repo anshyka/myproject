@@ -1,6 +1,5 @@
-.idea/inspectionProfiles/Project_Default.xml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/myproject.iml
-.idea/vcs.xml
+.idea/
+logs.log
+venv/
+__pycache__/
+*.pyc
