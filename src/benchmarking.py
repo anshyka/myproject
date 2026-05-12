@@ -1,19 +1,19 @@
 import pandas as pd
 from pycaret.classification import setup, compare_models, get_config
 
-def run_benchmarking(df: pd.DataFrame):
-    """
-    Initializes the PyCaret setup with strict clinical constraints.
-    Enforces GroupKFold to prevent patient-level data leakage.
-    """
+def run_benchmarking(df):
     experiment = setup(
         data=df,
-        target='status',
+        target='class',
         fold_strategy='groupkfold',
-        fold_groups='name',
-        ignore_features=['name'],  # <--- THIS IS THE FIX
+        fold_groups='id',
+        ignore_features=['id'],
+        feature_selection=True,
+        n_features_to_select=0.2,
+        feature_selection_estimator='rf',  # <--- THIS IS THE FIX
         session_id=42,
-        verbose=False
+        verbose= True
+
     )
     return experiment
 

@@ -14,7 +14,7 @@ def evaluate_and_plot(model):
     predictions = predict_model(model, verbose=False)
 
     print("\nClassification Report (Holdout Set):")
-    print(classification_report(predictions['status'], predictions['prediction_label']))
+    print(classification_report(predictions['class'], predictions['prediction_label']))
 
     # Create artifacts directory if it doesn't exist
     os.makedirs('artifacts/plots', exist_ok=True)

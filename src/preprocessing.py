@@ -5,7 +5,7 @@ from typing import Tuple
 class ParkinsonsDataLoader:
     """Handles loading and validation of the Parkinson's acoustic dataset."""
 
-    def __init__(self, target_col: str = 'status', group_col: str = 'name'):
+    def __init__(self, target_col: str = 'class', group_col: str = 'id'):
         self.target_col = target_col
         self.group_col = group_col
 

@@ -52,7 +52,7 @@ def run_pipeline(data_path: str) -> None:
         os.makedirs('artifacts/models', exist_ok=True)
         export_path = 'artifacts/models/parkinsons_model_v1.joblib'
 
-        feature_names = df.drop(columns=['status', 'name']).columns.tolist()
+        feature_names = df.drop(columns=['class', 'id']).columns.tolist()
 
         artifact = {
             'model_pipeline': tuned_model,
@@ -69,4 +69,4 @@ def run_pipeline(data_path: str) -> None:
 
 if __name__ == "__main__":
     # Target dataset path
-    run_pipeline('data/raw/parkinsons_classification_data.csv')
+    run_pipeline('data/raw/pd_speech_features.csv')
