@@ -6,7 +6,7 @@ from src.benchmarking import run_benchmarking, compare_models_clinical
 from src.tuner import fine_tune_recall
 from src.evaluation import evaluate_and_plot
 
-# Configure logging for production-grade output
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -14,59 +14,63 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 def run_pipeline(data_path: str) -> None:
-    """
-    Executes the end-to-end Parkinson's detection machine learning pipeline.
-    Includes data ingestion, schema validation, AutoML benchmarking, 
-    hyperparameter tuning, evaluation, and artifact serialization.
-    """
     logger.info("Initializing Parkinson's Disease ML pipeline execution.")
 
     try:
         # 1. Load and Validate Data
-        logger.info(f"Loading dataset from: {data_path}")
         loader = ParkinsonsDataLoader()
         df = loader.load_data(data_path)
         loader.validate_schema(df)
-        logger.info(f"Data ingested and schema validated successfully. Shape: {df.shape}")
+        logger.info(f"Data ingested successfully. Shape: {df.shape}")
 
-        # 2. Benchmarking
-        logger.info("Starting AutoML benchmarking with strict GroupKFold constraints.")
+        # 2. Benchmarking (Initializes PyCaret & Feature Selection)
         run_benchmarking(df)
 
-        # 3. Find Best Baseline
-        best_baseline = compare_models_clinical()
-        logger.info(f"Baseline model selection complete. Champion model: {type(best_baseline).__name__}")
+        # 3. Get Top 3 Baseline Models (Excluding 'dummy')
+        top_3_baselines = compare_models_clinical()
+        logger.info(f"Top 3 candidates selected. Starting individual tuning.")
 
-        # 4. Fine-Tune for Clinical Recall
-        logger.info("Initiating Optuna hyperparameter tuning optimizing for Recall.")
-        tuned_model = fine_tune_recall(best_baseline)
-        logger.info("Hyperparameter tuning completed successfully.")
+        tuned_models = []
 
-        # 5. Evaluate and Generate Interpretability Plots
-        logger.info("Evaluating tuned model on the holdout set.")
-        evaluate_and_plot(tuned_model)
+        # 4. Loop through each model to tune them individually
+        for i, model in enumerate(top_3_baselines):
+            model_name = type(model).__name__
+            logger.info(f"Tuning Model {i+1}/3: {model_name}")
+            
+            try:
+                tuned_candidate = fine_tune_recall(model)
+                tuned_models.append(tuned_candidate)
+            except Exception as tune_err:
+                logger.warning(f"Failed to tune {model_name}: {tune_err}")
 
-        # 6. Artifact Export
+        # 5. Pick the ultimate winner
+        if not tuned_models:
+            raise ValueError("No models were successfully tuned.")
+        
+        final_winner = tuned_models[0]
+        logger.info(f"Champion model selected: {type(final_winner).__name__}")
+
+        # 6. Evaluate and Plot Results
+        evaluate_and_plot(final_winner)
+
+        # 7. Artifact Export
         os.makedirs('artifacts/models', exist_ok=True)
         export_path = 'artifacts/models/parkinsons_model_v1.joblib'
 
-        feature_names = df.drop(columns=['class', 'id']).columns.tolist()
-
+        # Metadata for clinical tracking
+        feature_names = df.drop(columns=['class', 'id'], errors='ignore').columns.tolist()
         artifact = {
-            'model_pipeline': tuned_model,
+            'model_pipeline': final_winner,
             'feature_names': feature_names
         }
 
         joblib.dump(artifact, export_path)
-        logger.info(f"Pipeline execution complete. Artifact serialized to: {export_path}")
+        logger.info(f"Pipeline complete. Artifact saved to: {export_path}")
 
     except Exception as e:
-        logger.error(f"Pipeline execution failed due to an error: {str(e)}", exc_info=True)
+        logger.error(f"Pipeline execution failed: {str(e)}", exc_info=True)
         raise
 
-
 if __name__ == "__main__":
-    # Target dataset path
     run_pipeline('data/raw/pd_speech_features.csv')
