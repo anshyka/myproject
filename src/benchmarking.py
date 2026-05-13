@@ -1,7 +1,10 @@
 import pandas as pd
-from pycaret.classification import setup, compare_models, get_config
+from pycaret.classification import setup, compare_models
 
 def run_benchmarking(df):
+    """
+    Sets up the experiment with 50-feature selection to reduce noise.
+    """
     experiment = setup(
         data=df,
         target='class',
@@ -9,27 +12,21 @@ def run_benchmarking(df):
         fold_groups='id',
         ignore_features=['id'],
         feature_selection=True,
-        n_features_to_select=0.2,
-        feature_selection_estimator='rf',  # <--- THIS IS THE FIX
+        n_features_to_select=50, # Reducing 750+ columns to 50 best
+        feature_selection_estimator='rf',
         session_id=42,
-        verbose= True
-
+        verbose=True
     )
     return experiment
 
-
 def compare_models_clinical():
     """
-    Benchmarks all available baseline models in PyCaret.
-    Sorts the leaderboard prioritizing F1-score for balanced clinical metrics.
+    Returns the Top 3 real models sorted by F1-Score.
     """
-    print("Benchmarking available models... (This will take a bit longer)")
-
-    # We exclude 'lightgbm' because it is structurally incompatible
-    # with tiny datasets and spams the terminal with split warnings.
-    best_model = compare_models(
-        sort='F1',
-        exclude=['lightgbm']  # <--- THIS IS THE FIX
+    # Exclude dummy to prevent the model from just guessing the majority class
+    top_3_models = compare_models(
+        sort='F1', 
+        n_select=3, 
+        exclude=['lightgbm', 'dummy']
     )
-
-    return best_model
+    return top_3_models
