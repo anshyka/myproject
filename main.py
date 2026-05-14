@@ -3,7 +3,7 @@ import logging
 import joblib
 from src.preprocessing import ParkinsonsDataLoader
 from src.benchmarking import run_benchmarking, compare_models_clinical
-from src.tuner import fine_tune_recall
+from src.tuner import fine_tune_model
 from src.evaluation import evaluate_and_plot
 
 # Configure logging
@@ -39,7 +39,7 @@ def run_pipeline(data_path: str) -> None:
             logger.info(f"Tuning Model {i+1}/3: {model_name}")
             
             try:
-                tuned_candidate = fine_tune_recall(model)
+                tuned_candidate = fine_tune_model(model)
                 tuned_models.append(tuned_candidate)
             except Exception as tune_err:
                 logger.warning(f"Failed to tune {model_name}: {tune_err}")
