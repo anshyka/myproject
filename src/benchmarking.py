@@ -3,7 +3,7 @@ from pycaret.classification import setup, compare_models
 
 def run_benchmarking(df):
     """
-    Sets up the experiment with 50-feature selection to reduce noise.
+    Sets up the experiment with 50-feature selection to eliminate noise.
     """
     experiment = setup(
         data=df,
@@ -12,7 +12,7 @@ def run_benchmarking(df):
         fold_groups='id',
         ignore_features=['id'],
         feature_selection=True,
-        n_features_to_select=50, # Reducing 750+ columns to 50 best
+        n_features_to_select=50, 
         feature_selection_estimator='rf',
         session_id=42,
         verbose=True
@@ -21,12 +21,12 @@ def run_benchmarking(df):
 
 def compare_models_clinical():
     """
-    Returns the Top 3 real models sorted by F1-Score.
+    Returns the Top 3 models that natively support soft-voting probabilities.
+    Excludes 'ridge', 'svm', and 'dummy' to prevent blending metric crashes.
     """
-    # Exclude dummy to prevent the model from just guessing the majority class
     top_3_models = compare_models(
         sort='F1', 
         n_select=3, 
-        exclude=['lightgbm', 'dummy']
+        exclude=['lightgbm', 'dummy', 'ridge', 'svm'] # <-- EXCLUDED RIDGE AND SVM HERE
     )
     return top_3_models
