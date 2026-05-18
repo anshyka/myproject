@@ -27,16 +27,16 @@ def run_pipeline(data_path: str) -> None:
         # 2. Benchmarking (Initializes PyCaret & Feature Selection)
         run_benchmarking(df)
 
-        # 3. Get Top 3 Probability-Capable Models
+        # 3. Get Top 3 Probability-Capable Models sorted by F1
         top_3_baselines = compare_models_clinical()
-        logger.info("Top 3 probability-compatible models selected successfully.")
+        logger.info("Top 3 F1-optimized models selected successfully.")
 
-        # 4. Implement Model Ensembling via Blending
+        # 4. Implement Model Ensembling via Blending optimized for F1
         logger.info("Blending top 3 models into a Soft-Voting Ensemble Classifier...")
         ensemble_winner = blend_models(
             estimator_list=top_3_baselines, 
             method='soft', 
-            optimize='F1'
+            optimize='F1'  # Dynamically tunes voting weights based on F1-Score performance
         )
         logger.info(f"Ensemble pipeline compiled successfully: {type(ensemble_winner).__name__}")
 

@@ -21,12 +21,13 @@ def run_benchmarking(df):
 
 def compare_models_clinical():
     """
-    Returns the Top 3 models that natively support soft-voting probabilities.
-    Excludes 'ridge', 'svm', and 'dummy' to prevent blending metric crashes.
+    Returns the Top 3 models ranked strictly by F1-Score.
+    Excludes non-probability estimators to ensure smooth soft-voting blending.
     """
+    # sort='F1' ensures that the baseline leaderboard targets the F1-Score first
     top_3_models = compare_models(
         sort='F1', 
         n_select=3, 
-        exclude=['lightgbm', 'dummy', 'ridge', 'svm'] # <-- EXCLUDED RIDGE AND SVM HERE
+        exclude=['lightgbm', 'dummy', 'ridge', 'svm']
     )
     return top_3_models
